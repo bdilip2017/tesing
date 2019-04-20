@@ -1,19 +1,20 @@
-FROM  weiotcontainer.azurecr.io/microsoft/dotnet:2.1-sdk AS build-env
-WORKDIR /app
+# Start with a base image containing Java runtime
+FROM openjdk:8-jdk-alpine
 
-COPY *.csproj ./
-RUN dotnet restore
+# Add Maintainer Info
+LABEL maintainer="bdildhiraj@gmail.com"
 
-COPY . ./
-RUN dotnet publish -c Release -o out
+# Add a volume pointing to /tmp
+VOLUME /tmp
 
-FROM  weiotcontainer.azurecr.io/microsoft/dotnet:2.1-aspnetcore-runtime-stretch-slim
+# Make port 8080 available to the world outside this container
+EXPOSE 8080
 
-WORKDIR /app
+# The application's jar file
+ARG JAR_FILE=target/websocket-demo-0.0.1-SNAPSHOT.jar
 
-COPY --from=build-env /app/out ./
-RUN useradd -ms /bin/bash moduleuser
+# Add the application's jar to the container
+ADD ${JAR_FILE} websocket-demo.jar
 
-USER moduleuser
-
-ENTRYPOINT ["dotnet", "RestfulAPICore.dll"]
+# Run the jar file 
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/websocket-demo.jar"]
